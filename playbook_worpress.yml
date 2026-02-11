@@ -1,0 +1,6 @@
+- name: Install WordPress on webservers
+  hosts: webservers
+  become: yes
+
+  roles:
+    - wordpress

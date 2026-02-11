@@ -1,0 +1,9 @@
+# Default variables for WordPress role
+wp_db_name: wordpress_db
+wp_db_user: wordpress_user
+wp_db_password: wordpress_pass
+apache_port: 80
+wordpress_download_url: "https://wordpress.org/latest.tar.gz"
+wordpress_dest: /var/www/html/
+wordpress_owner: www-data
+wordpress_group: www-data

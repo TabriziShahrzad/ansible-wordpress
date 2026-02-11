@@ -1,0 +1,16 @@
+# Variables for package installation
+wp_version: latest
+
+php_packages:
+  - php
+  - php-mysql
+  - libapache2-mod-php
+  - php-cli
+  - php-curl
+  - php-gd
+  - php-mbstring
+  - php-xml
+  - php-xmlrpc
+  - php-soap
+  - php-intl
+  - php-zip

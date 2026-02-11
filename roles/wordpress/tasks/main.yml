@@ -1,0 +1,122 @@
+---
+# Stop nginx if installed to free port 80
+- name: Stop nginx if installed
+  service:
+    name: nginx
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+# Update apt cache
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+# Install Apache
+- name: Install Apache
+  apt:
+    name: apache2
+    state: present
+
+# Install MariaDB
+- name: Install MariaDB
+  apt:
+    name: mariadb-server
+    state: present
+
+# Install PHP packages
+- name: Install PHP packages
+  apt:
+    name: "{{ php_packages }}"
+    state: present
+  notify: restart apache
+
+# Install python3-mysqldb (Required for mysql_db module)
+- name: Install python3-mysqldb for MySQL support
+  apt:
+    name: python3-mysqldb
+    state: present
+
+# Ensure Apache is started and enabled
+- name: Start and enable Apache
+  service:
+    name: apache2
+    state: started
+    enabled: yes
+
+# Ensure MariaDB is started and enabled
+- name: Start and enable MariaDB
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+# Create WordPress database
+- name: Create WordPress database
+  mysql_db:
+    name: "{{ wp_db_name }}"
+
+# Create WordPress database user
+- name: Create WordPress database user
+  mysql_user:
+    name: "{{ wp_db_user }}"
+    password: "{{ wp_db_password }}"
+    priv: "{{ wp_db_name }}.*:ALL"
+    state: present
+
+# Download WordPress
+- name: Download WordPress
+  get_url:
+    url: "{{ wordpress_download_url }}"
+    dest: "/tmp/wordpress.tar.gz"
+    mode: '0644'
+
+# Clean web root directory (Remove old files)
+- name: Clean web root directory
+  file:
+    path: "{{ wordpress_dest }}"
+    state: absent
+  become: yes
+
+# Create web root directory if it doesn't exist
+- name: Create web root directory
+  file:
+    path: "{{ wordpress_dest }}"
+    state: directory
+    owner: "{{ wordpress_owner }}"
+    group: "{{ wordpress_group }}"
+    mode: '0755'
+  become: yes
+
+# Extract WordPress directly to web root
+# This creates /var/www/html/wordpress
+- name: Extract WordPress directly to web root
+  unarchive:
+    src: "/tmp/wordpress.tar.gz"
+    dest: "{{ wordpress_dest }}"
+    remote_src: yes
+    owner: "{{ wordpress_owner }}"
+    group: "{{ wordpress_group }}"
+  become: yes
+
+# Move files from /var/www/html/wordpress/* to /var/www/html/
+- name: Move WordPress files up one level to root
+  shell: mv /var/www/html/wordpress/* /var/www/html/
+  become: yes
+
+# Remove the empty /var/www/html/wordpress directory
+- name: Remove empty wordpress directory
+  file:
+    path: /var/www/html/wordpress
+    state: absent
+  become: yes
+
+# Copy wp-config.php from template
+- name: Copy wp-config.php
+  template:
+    src: wp-config.php.j2
+    dest: "{{ wordpress_dest }}/wp-config.php"
+    owner: "{{ wordpress_owner }}"
+    group: "{{ wordpress_group }}"
+    mode: '0644'
+  notify: restart apache
